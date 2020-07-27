@@ -2,6 +2,7 @@ package com.vtb.test;
 
 import com.vtb.test.dataconfig.DataSourceConfig;
 import com.vtb.test.service.TestService;
+import org.junit.After;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.runner.RunWith;
@@ -20,7 +21,7 @@ class ApplicationTests {
     private TestService service;
 
     @BeforeEach
-    void contextLoads() throws SQLException{
+    void contextLoads() {
         service = new TestService();
         DataSource dataSource = new DataSourceConfig().getDataSource();
 
@@ -32,22 +33,41 @@ class ApplicationTests {
                 "}\n" +
                 "$$;";
 
-        connection = dataSource.getConnection();
-        Statement statement = connection.createStatement();
-        statement.execute(query);
+        try {
+            connection = dataSource.getConnection();
+            Statement statement = connection.createStatement();
+            statement.execute(query);
+            statement.close();
+        } catch (SQLException th) {
+            th.printStackTrace();
+        }
     }
 
     @org.junit.jupiter.api.Test
-    void test() throws SQLException {
+    void test()  {
         service.setName("test");
         service.setInfo("someINFO");
         String out = "";
 
-        CallableStatement callableStatement = connection.prepareCall("CALL MYFUNCTION(?, ?)");
-        callableStatement.setString(1, service.toString());
-        callableStatement.setString(2, out);
-        ResultSet rs = callableStatement.executeQuery();
-        rs.next();
-        Assertions.assertEquals(rs.getString(1), "TestService{name='test', info='someINFO'}");
+        ResultSet rs;
+        try (CallableStatement callableStatement = connection.prepareCall("CALL MYFUNCTION(?, ?)")) {
+            callableStatement.setString(1, service.toString());
+            callableStatement.setString(2, out);
+            rs = callableStatement.executeQuery();
+            rs.next();
+            Assertions.assertEquals(rs.getString(1), "TestService{name='test', info='someINFO'}");
+            rs.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @After
+    public void closeConnection() {
+        try {
+            connection.close();
+        } catch (SQLException th) {
+            th.printStackTrace();
+        }
     }
 }
