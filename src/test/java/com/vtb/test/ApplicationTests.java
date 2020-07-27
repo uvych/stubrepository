@@ -20,7 +20,7 @@ class ApplicationTests {
     private TestService service;
 
     @BeforeEach
-    void contextLoads() throws SQLException, ClassNotFoundException {
+    void contextLoads() throws SQLException{
         service = new TestService();
         DataSource dataSource = new DataSourceConfig().getDataSource();
 
@@ -31,7 +31,7 @@ class ApplicationTests {
                 "    return out;\n" +
                 "}\n" +
                 "$$;";
-        
+
         connection = dataSource.getConnection();
         Statement statement = connection.createStatement();
         statement.execute(query);
